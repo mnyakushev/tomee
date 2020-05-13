@@ -168,16 +168,17 @@ public class TomcatSecurityService extends AbstractSecurityService {
     }
 
     public Object enterWebApp(final Realm realm, final Principal principal, final String runAs) {
-        Identity newIdentity = null;
+        final Identity oldIdentity = clientIdentity.get();
+
         if (principal != null) {
             final Subject newSubject = createSubject(realm, principal);
-            newIdentity = new Identity(newSubject, null);
+            try {
+                associate(registerSubject(newSubject));
+            } catch (LoginException e) {
+            }
         }
 
-        final Identity oldIdentity = clientIdentity.get();
         final WebAppState webAppState = new WebAppState(oldIdentity, runAs != null);
-        clientIdentity.set(newIdentity);
-
         if (runAs != null) {
             final Subject runAsSubject = createRunAsSubject(runAs);
             RUN_AS_STACK.get().addFirst(runAsSubject);
